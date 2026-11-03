@@ -14,6 +14,49 @@
     user-select: none;
     -webkit-tap-highlight-color: transparent;
   }
+
+  #bloqueio-mobile {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+
+    background: #1a1a1a;
+    color: white;
+
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+
+    padding: 20px;
+    font-family: Arial, sans-serif;
+}
+
+.aviso {
+    max-width: 400px;
+}
+
+.aviso h1 {
+    font-size: 24px;
+    margin-bottom: 20px;
+}
+
+.aviso p {
+    font-size: 16px;
+    line-height: 1.5;
+    margin-bottom: 15px;
+}
+
+@media (max-width: 768px) {
+    #bloqueio-mobile {
+        display: flex;
+    }
+
+    #game-canvas {
+        display: none;
+    }
+}
+
   #app { position: relative; width: 100vw; height: 100vh; overflow: hidden; }
 
   .tela { position: absolute; inset: 0; display: none; }
@@ -74,6 +117,21 @@
 </style>
 </head>
 <body>
+
+  <div id="bloqueio-mobile">
+    <div class="aviso">
+        <h1>⚠️ Acesso pelo computador</h1>
+
+        <p>
+            Este jogo foi desenvolvido para computadores
+            e ainda não possui suporte para celulares.
+        </p>
+
+        <p>
+            Acesse pelo computador para jogar.
+        </p>
+    </div>
+</div>
 <div id="app">
 
   <div id="tela-menu" class="tela ativa">
