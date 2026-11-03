@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Calibrador de Erros</title>
+<style>
+  body { margin: 0; background: #222; color: white; font-family: sans-serif; overflow: hidden; }
+  #instrucoes { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.7); padding: 10px; border-radius: 5px; z-index: 10; pointer-events: none;}
+  #tela { position: relative; width: 100vw; height: 100vh; cursor: crosshair; }
+  img { width: 100%; height: 100%; object-fit: fill; pointer-events: none; }
+  .retangulo { position: absolute; border: 3px solid red; background: rgba(255,0,0,0.3); pointer-events: none; }
+  #resultado { width: 100%; height: 100px; position: absolute; bottom: 0; left: 0; background: black; color: lime; font-family: monospace; padding: 10px; display: none; z-index: 20;}
+</style>
+</head>
+<body>
+
+<div id="instrucoes">
+  <b>Calibrador de Erros</b><br>
+  1. Digite o número da ODS (1 a 17) e aperte Enter.<br>
+  2. Clique e arraste para desenhar os 7 retângulos.<br>
+  3. Copie o código gerado no final.
+</div>
+
+<div id="tela">
+  <img id="imagem" src="" alt="Imagem da ODS">
+  <div id="camada-retangulos"></div>
+</div>
+
+<textarea id="resultado" readonly></textarea>
+
+<script>
+let odsAtual = 0;
+let clicando = false;
+let startX = 0, startY = 0;
+let retanguloAtual = null;
+let erros = [];
+const img = document.getElementById('imagem');
+const tela = document.getElementById('tela');
+const camada = document.getElementById('camada-retangulos');
+const resultado = document.getElementById('resultado');
+
+// Pergunta qual ODS calibrar
+function iniciar() {
+  let num = prompt("Qual ODS você quer calibrar? (Digite de 1 a 17)");
+  num = parseInt(num);
+  if (isNaN(num) || num < 1 || num > 17) {
+    alert("Número inválido. Recarregue a página.");
+    return;
+  }
+  odsAtual = num;
+  // Formata o nome do arquivo (ex: 1 -> ODS_01.png)
+  let nomeArquivo = `assets/ODS_${String(num).padStart(2, '0')}.png`;
+  img.src = nomeArquivo;
+  erros = [];
+  camada.innerHTML = "";
+  resultado.style.display = "none";
+}
+
+// Lógica de desenhar com o mouse
+tela.addEventListener('mousedown', (e) => {
+  if (resultado.style.display === "block") return;
+  if (erros.length >= 7) return; // Já tem 7
+
+  clicando = true;
+  const rect = tela.getBoundingClientRect();
+  startX = e.clientX - rect.left;
+  startY = e.clientY - rect.top;
+
+  retanguloAtual = document.createElement('div');
+  retanguloAtual.className = 'retangulo';
+  camada.appendChild(retanguloAtual);
+});
+
+tela.addEventListener('mousemove', (e) => {
+  if (!clicando || !retanguloAtual) return;
+  const rect = tela.getBoundingClientRect();
+  const xAtual = e.clientX - rect.left;
+  const yAtual = e.clientY - rect.top;
+
+  const left = Math.min(startX, xAtual);
+  const top = Math.min(startY, yAtual);
+  const width = Math.abs(xAtual - startX);
+  const height = Math.abs(yAtual - startY);
+
+  retanguloAtual.style.left = left + 'px';
+  retanguloAtual.style.top = top + 'px';
+  retanguloAtual.style.width = width + 'px';
+  retanguloAtual.style.height = height + 'px';
+});
+
+tela.addEventListener('mouseup', (e) => {
+  if (!clicando) return;
+  clicando = false;
+  
+  const rect = tela.getBoundingClientRect();
+  const xAtual = e.clientX - rect.left;
+  const yAtual = e.clientY - rect.top;
+
+  const left = Math.min(startX, xAtual);
+  const top = Math.min(startY, yAtual);
+  const width = Math.abs(xAtual - startX);
+  const height = Math.abs(yAtual - startY);
+
+  // Evita cliques acidentais sem arrastar
+  if (width < 5 || height < 5) {
+    retanguloAtual.remove();
+    retanguloAtual = null;
+    return;
+  }
+
+  // Converte para % da tela
+  const pctLeft = (left / tela.clientWidth) * 100;
+  const pctTop = (top / tela.clientHeight) * 100;
+  const pctWidth = (width / tela.clientWidth) * 100;
+  const pctHeight = (height / tela.clientHeight) * 100;
+
+  // Salva no array
+  erros.push([pctLeft.toFixed(2), pctTop.toFixed(2), pctWidth.toFixed(2), pctHeight.toFixed(2)]);
+
+  // Atualiza visual do retângulo para ficar fixo
+  retanguloAtual.style.border = "2px solid yellow";
+  retanguloAtual.style.backgroundColor = "rgba(255, 255, 0, 0.3)";
+  retanguloAtual = null;
+
+  // Se chegou a 7, gera o código
+  if (erros.length === 7) {
+    gerarCodigo();
+  }
+});
+
+function gerarCodigo() {
+  let texto = `// ODS ${odsAtual}\n[\n`;
+  erros.forEach(erro => {
+    texto += `  [${erro[0]}, ${erro[1]}, ${erro[2]}, ${erro[3]}],\n`;
+  });
+  texto += `],`;
+  
+  resultado.value = texto;
+  resultado.style.display = "block";
+  resultado.select();
+  document.execCommand('copy');
+  alert("7 erros marcados! O código foi copiado para a área de transferência. Cole no seu index.html.");
+}
+
+iniciar();
+</script>
+</body>
+</html>
